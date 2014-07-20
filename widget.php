@@ -46,7 +46,7 @@ class SYAMailingList_Widget extends WP_Widget {
 <?php
 			}
 ?>
-<form action="<?php the_permalink(); ?>" method="post">
+<form method="post">
 <label>
 <?php _e('Name:', SYAMailingList::PLUGIN_NAME)?>
 <input type="text" name="<?php echo $this->field(SYAMailingList::NAME_FIELD)?>" value="<?php echo esc_html( $values[ SYAMailingList::NAME_FIELD] )?>" />
