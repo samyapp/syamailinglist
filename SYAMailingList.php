@@ -119,6 +119,24 @@ class SYAMailingList
 		register_widget( 'SYAMailingList_Widget');
 	}
 
+	public function show_admin_page()
+	{
+	  $this->admin->display();
+	}
+	
+	/**
+	 * Initialise the admin menu 
+	 */
+	public function init_admin_menu()
+	{
+		require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'SYAMailingList_Admin.php';
+		$this->admin = new SYAMailingList_Admin($this);
+		// needs to run / init here, as if forcing download of csv file it must be before wp sends any headers.
+		$this->admin->run();
+		add_menu_page( 'Mailing List Subscribers', 'Mailing List', 'moderate_comments', 
+				  'mailing_list', array($this,'show_admin_page'), plugins_url( 'myplugin/images/icon.png' ), 6);
+	}
+	
 	/**
 	 * Construct the plugin - register hooks and callbacks, and set the singleton instance of ourself
 	 */
@@ -130,7 +148,11 @@ class SYAMailingList
 		add_action( 'plugins_loaded', array( $this, 'do_we_need_to_upgrade_db' ) );
 		add_action( 'widgets_init', array( $this, 'register_widget' ) );
 		add_shortcode('syamailinglist_signup', array( $this, 'do_shortcode' ) );
-		add_action('init', array( $this, 'check_form_submission' ) );
+		if ( is_admin() ) { // this only needed if inside admin
+			add_action( 'admin_menu', array( $this, 'init_admin_menu' ) );
+		} else { // we care about these actions within the main site itself
+			add_action('init', array( $this, 'check_form_submission' ) );
+		}
 	}
 
 	/**
@@ -191,6 +213,17 @@ class SYAMailingList
 		}
 		return $this->countries;
 	}
+	
+	/**
+	 * Get the name of the country referenced by the country code, e.g. UK => United Kingdom
+	 * @param string $id 2 digit country code
+	 * @return string The name of the relevant country, or an empty string.
+	 */
+	public function country_name_from_id($id)
+	{
+	  $this->get_countries();
+	  return isset( $this->countries[ $id ] ) ? $this->countries[ $id ] : '';
+	}
 
 	/**
 	 * Is this a valid country?
@@ -209,12 +242,13 @@ class SYAMailingList
 	public function add_to_database( $data )
 	{
 		global $wpdb;
+		$dt = new DateTime();
 		$wpdb->insert( $this->table_name(), 
 			array (
 				self::NAME_FIELD => $data[ self::NAME_FIELD ],
 				self::EMAIL_FIELD => $data[ self::EMAIL_FIELD ],
 				self::COUNTRY_FIELD => $data[ self::COUNTRY_FIELD ],
-				self::DATE_FIELD => (new DateTime())->format('Y-m-d H:i:s')				
+				self::DATE_FIELD => $dt->format('Y-m-d H:i:s')				
 			),
 			array (
 				'%s',
