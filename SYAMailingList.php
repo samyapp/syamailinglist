@@ -148,6 +148,8 @@ class SYAMailingList
 		add_action( 'plugins_loaded', array( $this, 'do_we_need_to_upgrade_db' ) );
 		add_action( 'widgets_init', array( $this, 'register_widget' ) );
 		add_shortcode('syamailinglist_signup', array( $this, 'do_shortcode' ) );
+		add_shortcode('syaml_submitted', array( $this, 'do_conditional_shortcode' ) );
+		add_shortcode('syaml_unsubmitted', array( $this, 'do_conditional_shortcode' ) );
 		if ( is_admin() ) { // this only needed if inside admin
 			add_action( 'admin_menu', array( $this, 'init_admin_menu' ) );
 		} else { // we care about these actions within the main site itself
@@ -175,6 +177,15 @@ class SYAMailingList
 	}
 
 	/**
+	 * Is the country field required or optional?
+	 * @return bool true if the country field is optional
+	 */
+	public function is_country_optional()
+	{
+		return true;
+	}
+
+	/**
 	 * Validate the submitted form data, returning an array of errors if any.
 	 * @param array $data Associative array of field-name => value pairs.
 	 * @return array An array containing field-name => error-message pairs if any errors occurred.
@@ -197,7 +208,8 @@ class SYAMailingList
 			$errors[ self::EMAIL_FIELD ] = str_replace( '%s', 
 				esc_html( $data[ self::EMAIL_FIELD ] ), __( 'The email "%s" is already on our mailing list', self::PLUGIN_NAME ) );
 		}
-		if ( empty( $data[ self::COUNTRY_FIELD ] ) || ! $this->is_valid_country( $data[ self::COUNTRY_FIELD ] ) ) {
+		if ( !$this->is_country_optional() && 
+			( empty( $data[ self::COUNTRY_FIELD ] ) || ! $this->is_valid_country( $data[ self::COUNTRY_FIELD ] ) ) ) {
 			$errors[ $data[ self::COUNTRY_FIELD] ] = __( 'Please select your country', self::PLUGIN_NAME );
 		}
 		return $errors;
@@ -269,6 +281,19 @@ class SYAMailingList
 		return ob_get_clean();
 	}
 
+	public function do_conditional_shortcode($atts, $content, $tag)
+	{
+	  if ( strtolower(trim($tag)) == 'syaml_submitted' ) {
+		if ( $this->submitted && count( $this->errors ) == 0 ) {
+			return $content;
+		}
+	  }
+	  else if ( !$this->submitted || count( $this->errors ) > 0 ) {
+		return $content;
+	  }
+	  return '';
+	}
+	
 	/**
 	 * Gets the values to display in the form.
 	 * If not already set (by form submission), sets defaults.
@@ -316,7 +341,33 @@ class SYAMailingList
 	 */
 	public function get_default_country()
 	{
-		return 'UK';
+		require_once dirname(__FILE__) . '/geoip2.phar';
+		$ip = null;
+		if ( isset( $_SERVER['X_FORWARDED_FOR'] ) ) {
+			$ip = $_SERVER['X_FORWARDED_FOR'];
+		} else if ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
+			$ip = $_SERVER['REMOTE_ADDR'];
+		}
+		$code = 'UK';
+		if ($ip) {
+			$reader = new GeoIp2\Database\Reader( dirname(__FILE__) . DIRECTORY_SEPARATOR . 'GeoLite2-Country.mmdb' );
+			try {
+				$record = $reader->country( $ip );
+				if ( $record ) {
+					$code = $record->country->isoCode;
+					if ( $code == 'GB' ) {
+						$code = 'UK';
+					}
+					if ( !$this->is_valid_country( $code ) ) {
+						$code = '';
+					}
+				}
+			} catch ( Exception $e ) {
+				$code = 'FR';
+			}
+		}
+
+		return $code;
 	}
 
 	/**

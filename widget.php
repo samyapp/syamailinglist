@@ -46,22 +46,19 @@ class SYAMailingList_Widget extends WP_Widget {
 <?php
 			}
 ?>
-<form method="post">
-<label>
-<?php _e('Name:', SYAMailingList::PLUGIN_NAME)?>
-<input type="text" name="<?php echo $this->field(SYAMailingList::NAME_FIELD)?>" value="<?php echo esc_html( $values[ SYAMailingList::NAME_FIELD] )?>" />
-</label>
-<label>
-<?php _e('Email:', SYAMailingList::PLUGIN_NAME)?>
-<input type="text" name="<?php echo $this->field(SYAMailingList::EMAIL_FIELD)?>" value="<?php echo esc_html( $values[ SYAMailingList::EMAIL_FIELD] )?>" />
-</label>
-<label>
-<?php _e('Country:', SYAMailingList::PLUGIN_NAME)?>
-<select name="<?php echo $this->field(SYAMailingList::COUNTRY_FIELD)?>">
+<form method="post" class="syaml_form">
+<label for="<?php echo SYAMailingList::FORM_COLLECTION?>_<?php echo SYAMailingList::NAME_FIELD?>"><?php _e('Name:', SYAMailingList::PLUGIN_NAME)?></label>
+<input type="text" name="<?php echo $this->field(SYAMailingList::NAME_FIELD)?>" value="<?php echo esc_html( $values[ SYAMailingList::NAME_FIELD] )?>" id="<?php echo SYAMailingList::FORM_COLLECTION?>_<?php echo SYAMailingList::NAME_FIELD?>" />
+<label for="<?php echo SYAMailingList::FORM_COLLECTION?>_<?php echo SYAMailingList::EMAIL_FIELD?>"><?php _e('Email:', SYAMailingList::PLUGIN_NAME)?></label>
+<input type="text" name="<?php echo $this->field(SYAMailingList::EMAIL_FIELD)?>" value="<?php echo esc_html( $values[ SYAMailingList::EMAIL_FIELD] )?>"  id="<?php echo SYAMailingList::FORM_COLLECTION?>_<?php echo SYAMailingList::EMAIL_FIELD?>" />
+<label for="<?php echo SYAMailingList::FORM_COLLECTION?>_<?php echo SYAMailingList::COUNTRY_FIELD?>"><?php _e('Country:', SYAMailingList::PLUGIN_NAME)?></label>
+<select name="<?php echo $this->field(SYAMailingList::COUNTRY_FIELD)?>" id="<?php echo SYAMailingList::FORM_COLLECTION?>_<?php echo SYAMailingList::COUNTRY_FIELD?>">
+<?php if ( SYAMailingList::instance()->is_country_optional() ) { ?>
+<option value=""></option>
+<?php } ?>
 <?php foreach ( SYAMailingList::instance()->get_countries() as $id => $name ) { ?>
 <option value="<?php echo esc_html( $id )?>"<?php if ( $id == $values[ SYAMailingList::COUNTRY_FIELD ] ) { echo ' selected="selected"';}?>><?php echo esc_html( $name )?></option>
 <?php } ?>
-</label>
 <input type="submit" name="<?php echo $this->field(SYAMailingList::SUBMIT_FIELD)?>" value="<?php _e( 'Sign Up', SYAMailingList::PLUGIN_NAME )?>" />
 </form>
 <?php
