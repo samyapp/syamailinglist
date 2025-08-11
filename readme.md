@@ -1,3 +1,5 @@
+# Archived, ancient code.
+
 # Simply Yet Another Mailing List - WordPress Plugin #
 
 A very simple mailing list signup form plugin for WordPress.
